@@ -21,6 +21,26 @@
       "is_download_supported": true,
       "status": "active",
       "nsfw": false
+    },
+    {
+      "id": "animewitcher",
+      "name": "AnimeWitcher (JS)",
+      "display_name": "AnimeWitcher",
+      "version": "1.0.4",
+      "author": "M O S A",
+      "description": "مصدر أنمي ويتشر لمشاهدة الأنمي المترجم",
+      "icon": "https://raw.githubusercontent.com/M0SAD67/Blugin/refs/heads/main/AnimeWitcher/icon.png",
+      "url": "https://raw.githubusercontent.com/M0SAD67/Blugin/refs/heads/main/AnimeWitcher/animewitcher.js",
+      "base_url": "https://animewitcher.com",
+      "language": "ar",
+      "min_app_version": "1.3.1",
+      "is_arabic": true,
+      "is_anime": true,
+      "is_movie": false,
+      "is_series": false,
+      "is_download_supported": true,
+      "status": "active",
+      "nsfw": false
     }
   ]
 }
