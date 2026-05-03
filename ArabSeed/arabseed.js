@@ -9,10 +9,17 @@ var arabseed = {
     return {
       id: 'arabseed',
       name: 'ArabSeed (JS)',
-      version: '1.0.2',
-      author: 'Admin',
+      version: '1.0.3',
+      author: 'M O S A',
+      description: 'مصدر عرب سيد للأفلام والمسلسلات العربية والأجنبية المترجمة',
+      icon: 'https://raw.githubusercontent.com/M0SAD67/Blugin/refs/heads/main/ArabSeed/icon.png',
       language: 'ar',
-      min_app_version: '1.3.1'
+      is_arabic: true,
+      is_anime: true,
+      is_movie: true,
+      is_download_supported: true,
+      min_app_version: '1.3.1',
+      nsfw: false
     };
   },
 
