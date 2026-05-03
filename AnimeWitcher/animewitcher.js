@@ -84,13 +84,22 @@ const animewitcher = {
 
       const params = `attributesToRetrieve=${encodeURIComponent(attributes)}&hitsPerPage=50&page=0&query=${encodeURIComponent(query)}`;
 
-      const response = await AppBridge.request(this._algoliaQueryUrl('series'), {
-        method: 'POST',
-        headers: this._algoliaHeaders(),
-        body: JSON.stringify({ params: params })
-      });
+      const response = await AppBridge.post(this._algoliaQueryUrl('series'), 
+        JSON.stringify({ params: params }),
+        this._algoliaHeaders()
+      );
 
-      const data = JSON.parse(response);
+      let data;
+      try {
+        data = typeof response === 'string' ? JSON.parse(response) : response;
+        if (data.data) {
+          data = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
+        }
+      } catch(e) {
+        console.log('Search parse error: ' + e);
+        return [];
+      }
+
       const hits = data.hits || [];
       return hits.map(hit => ({
         id: hit.objectID,
