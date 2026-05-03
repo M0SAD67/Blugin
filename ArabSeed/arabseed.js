@@ -2,11 +2,14 @@ var arabseed = {
   baseUrl: 'https://asd.pics',
   userAgent: 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36',
 
+  // Broken server domains to hide
+  brokenServers: ['byse', '398fitus', 'bysezejataos', 'bysebuho', 'bysevepoin', 'byseqekaho', 'byse.sx', 'lulu', 'lulustream', 'vidoo', 'vidara'],
+
   getInfo: async function() {
     return {
       id: 'arabseed',
       name: 'ArabSeed (JS)',
-      version: '1.0.1',
+      version: '1.0.2',
       author: 'Admin',
       language: 'ar',
       min_app_version: '1.3.1'
@@ -39,9 +42,6 @@ var arabseed = {
         let items = queryRes.elements || [];
         
         for (let item of items) {
-          // Find 'a' and 'img' manually using sub-queries since item is just an object here, 
-          // but AppBridge.query() only returns the top level nodes.
-          // Wait, AppBridge.query returns outerHtml. We can query the outerHtml!
           let linkRes = await AppBridge.queryOne(item.outerHtml, 'a');
           if (!linkRes) continue;
           
@@ -132,7 +132,7 @@ var arabseed = {
         });
       }
 
-      episodes.sort((a, b) => a.number - b.number);
+      episodes.sort(function(a, b) { return a.number - b.number; });
       return episodes;
     } catch (e) {
       return [];
@@ -234,17 +234,36 @@ var arabseed = {
       }
 
       let servers = [];
-      
-      // We skip the Byse checking in JS to save time, or we can just filter out based on URL later.
-      // Or we can fetch the first quality URL. For performance, we'll let Dart Extractor fail gracefully if Byse is broken.
-      
+      var self = this;
+
+      // Filter broken servers by checking first quality iframe URL
       for (let name in groupedServers) {
         let qMap = groupedServers[name];
-        servers.push({
-          name: name,
-          data: JSON.stringify({'type': 'grouped', 'qualities': qMap}),
-          category: Object.keys(qMap).join(', ')
-        });
+        let qKeys = Object.keys(qMap);
+        let isBroken = false;
+
+        if (qKeys.length > 0) {
+          try {
+            let firstQData = qMap[qKeys[0]];
+            let iframeUrl = await this._getIframeUrl(firstQData);
+            if (iframeUrl) {
+              for (let broken of self.brokenServers) {
+                if (iframeUrl.includes(broken)) {
+                  isBroken = true;
+                  break;
+                }
+              }
+            }
+          } catch (e) {}
+        }
+
+        if (!isBroken) {
+          servers.push({
+            name: name,
+            data: JSON.stringify({'type': 'grouped', 'qualities': qMap}),
+            category: qKeys.join(', ')
+          });
+        }
       }
 
       let dServers = await this._extractDownloadServers(watchHtml);
@@ -332,7 +351,7 @@ var arabseed = {
         let allStreams = [];
         let seenUrls = new Set();
         
-        let qKeys = Object.keys(qualities).sort((a, b) => {
+        let qKeys = Object.keys(qualities).sort(function(a, b) {
            let qa = parseInt(a.replace(/[^0-9]/g, '')) || 0;
            let qb = parseInt(b.replace(/[^0-9]/g, '')) || 0;
            return qb - qa;
@@ -343,6 +362,16 @@ var arabseed = {
           try {
             let iframeUrl = await this._getIframeUrl(qData);
             if (iframeUrl) {
+               // Check if this is a broken server
+               let isBroken = false;
+               for (let broken of this.brokenServers) {
+                 if (iframeUrl.includes(broken)) {
+                   isBroken = true;
+                   break;
+                 }
+               }
+               if (isBroken) continue;
+
                let streamRes = await AppBridge.extractStream(iframeUrl, qData.watch_url || this.baseUrl);
                if (streamRes && streamRes.streams) {
                   let s = streamRes.streams[0];
@@ -374,7 +403,7 @@ var arabseed = {
         };
       }
 
-      let iframeUrl;
+      var iframeUrl;
       if (type === 'new_api') {
         iframeUrl = await this._getIframeUrl(data);
       } else {
@@ -385,6 +414,11 @@ var arabseed = {
       
       if (iframeUrl.startsWith('//')) iframeUrl = 'https:' + iframeUrl;
       else if (iframeUrl.startsWith('/')) iframeUrl = this.baseUrl + iframeUrl;
+
+      // Check broken servers
+      for (let broken of this.brokenServers) {
+        if (iframeUrl.includes(broken)) return null;
+      }
 
       let streamRes = await AppBridge.extractStream(iframeUrl, data.watch_url || this.baseUrl);
       if (streamRes) return streamRes;
